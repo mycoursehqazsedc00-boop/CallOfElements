@@ -1,0 +1,346 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/">
+	<Script file="COE_Twist.lua"/>
+
+	<!-- Background logic / OnUpdate frame -->
+	<Frame name="COE_TwistLogicFrame" parent="UIParent" hidden="false">
+		<Scripts>
+			<OnLoad>
+				COE_Twist:Init();
+			</OnLoad>
+			<OnEvent>
+				COE_Twist:OnEvent( event );
+			</OnEvent>
+			<OnUpdate>
+				COE_Twist:OnUpdate( arg1 );
+			</OnUpdate>
+		</Scripts>
+	</Frame>
+
+	<!-- Minimap Button -->
+	<Button name="COEMinimapButton" parent="Minimap" toplevel="true" movable="true" frameStrata="MEDIUM" enableMouse="true" hidden="true">
+		<Size>
+			<AbsDimension x="33" y="33"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT"/>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="COEMinimapButtonIcon" file="Interface\Icons\Spell_Nature_Windfury">
+					<Size>
+						<AbsDimension x="20" y="20"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="7" y="-6"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="COEMinimapButtonBorder" file="Interface\Minimap\MiniMap-TrackingBorder">
+					<Size>
+						<AbsDimension x="56" y="56"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+				<Texture name="COEMinimapButtonGlow" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight" alphaMode="ADD" hidden="true">
+					<Size>
+						<AbsDimension x="32" y="32"/>
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+					<Color r="0.2" g="1.0" b="0.4" a="0.8"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<HighlightTexture file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight" alphaMode="ADD"/>
+		<Scripts>
+			<OnLoad>
+				this:RegisterForClicks( "LeftButtonUp", "RightButtonUp" );
+				this:RegisterForDrag( "LeftButton" );
+			</OnLoad>
+			<OnDragStart>
+				this.isDragging = true;
+			</OnDragStart>
+			<OnDragStop>
+				this.isDragging = false;
+			</OnDragStop>
+			<OnUpdate>
+				if( this.isDragging ) then
+					COE_Twist:OnMinimapDragUpdate();
+				end
+			</OnUpdate>
+			<OnClick>
+				COE_Twist:OnMinimapClick( arg1 );
+			</OnClick>
+			<OnEnter>
+				COE_Twist:OnMinimapEnter();
+			</OnEnter>
+			<OnLeave>
+				GameTooltip:Hide();
+			</OnLeave>
+		</Scripts>
+	</Button>
+
+	<!-- Totem Twisting Menu UI -->
+	<Frame name="COE_TwistFrame" parent="UIParent" toplevel="true" movable="true" enableMouse="true" hidden="true" frameStrata="DIALOG">
+		<Size>
+			<AbsDimension x="245" y="270"/>
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="11" right="12" top="12" bottom="11"/>
+			</BackgroundInsets>
+			<TileSize>
+				<AbsValue val="32"/>
+			</TileSize>
+			<EdgeSize>
+				<AbsValue val="32"/>
+			</EdgeSize>
+		</Backdrop>
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString name="COE_TwistTitle" inherits="GameFontNormal" text="Totem Twisting">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="-16"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="COE_TwistActionLabel" inherits="GameFontHighlightSmall" text="Next: Windfury Totem">
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="TOPLEFT">
+							<Offset>
+								<AbsDimension x="64" y="-54"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<!-- Close button -->
+			<Button name="COE_TwistCloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-6" y="-6"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+
+			<!-- Twist Now Action Button -->
+			<Button name="COE_TwistActionButton">
+				<Size>
+					<AbsDimension x="36" y="36"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="20" y="-42"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="COE_TwistActionButtonIcon" file="Interface\Icons\Spell_Nature_Windfury"/>
+					</Layer>
+				</Layers>
+				<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD"/>
+				<Scripts>
+					<OnClick>
+						COE_Twist:TwistNow();
+					</OnClick>
+					<OnEnter>
+						GameTooltip:SetOwner( this, "ANCHOR_RIGHT" );
+						GameTooltip:SetText( "Twist Now (/coe twist)", 1, 0.82, 0 );
+						GameTooltip:AddLine( "Casts Windfury or Secondary Air Totem based on current rotation.", 1, 1, 1, 1 );
+						GameTooltip:Show();
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide();
+					</OnLeave>
+				</Scripts>
+			</Button>
+
+			<!-- WF Remaining StatusBar -->
+			<StatusBar name="COE_TwistStatusBar" minValue="0" maxValue="9" defaultValue="0">
+				<Size>
+					<AbsDimension x="155" y="10"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="64" y="-66"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+				<BarColor r="0.2" g="0.85" b="0.4"/>
+			</StatusBar>
+
+			<!-- Auto Twist Checkbox -->
+			<CheckButton name="COE_TwistAutoCheck" inherits="UICheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="18" y="-88"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal( this:GetName() .. "Text" ):SetText( "Auto Totem Twisting" );
+					</OnLoad>
+					<OnClick>
+						COE_Twist:OnAutoCheckClick();
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+
+			<!-- Combat Only Checkbox -->
+			<CheckButton name="COE_TwistCombatCheck" inherits="UICheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="18" y="-114"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal( this:GetName() .. "Text" ):SetText( "Auto Twist in Combat Only" );
+					</OnLoad>
+					<OnClick>
+						COE_Twist:OnCombatCheckClick();
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+
+			<!-- Manual Alert Checkbox -->
+			<CheckButton name="COE_TwistAlertCheck" inherits="UICheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="18" y="-140"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal( this:GetName() .. "Text" ):SetText( "Manual Twist Alerts" );
+					</OnLoad>
+					<OnClick>
+						COE_Twist:OnAlertCheckClick();
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+
+			<!-- Secondary Totem Cycle Button -->
+			<Button name="COE_TwistSecondaryButton" inherits="UIPanelButtonTemplate" text="Secondary: Grace of Air">
+				<Size>
+					<AbsDimension x="205" y="22"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="20" y="-172"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						COE_Twist:CycleSecondaryTotem();
+					</OnClick>
+				</Scripts>
+			</Button>
+
+			<!-- Refresh Time Slider -->
+			<Slider name="COE_TwistRefreshSlider" inherits="OptionsSliderTemplate" minValue="7.0" maxValue="10.0" valueStep="0.5">
+				<Size>
+					<AbsDimension x="195" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="25" y="-210"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal( this:GetName() .. "Low" ):SetText( "7.0s" );
+						getglobal( this:GetName() .. "High" ):SetText( "10.0s" );
+					</OnLoad>
+					<OnValueChanged>
+						COE_Twist:OnRefreshSliderChange();
+					</OnValueChanged>
+				</Scripts>
+			</Slider>
+
+			<!-- Footer: COE Config Button -->
+			<Button name="COE_TwistConfigButton" inherits="UIPanelButtonTemplate" text="COE Config">
+				<Size>
+					<AbsDimension x="100" y="22"/>
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="20" y="16"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						COE:ToggleConfigFrame();
+					</OnClick>
+				</Scripts>
+			</Button>
+
+			<!-- Footer: Twist Now Button -->
+			<Button name="COE_TwistNowTextButton" inherits="UIPanelButtonTemplate" text="Twist Now">
+				<Size>
+					<AbsDimension x="100" y="22"/>
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT">
+						<Offset>
+							<AbsDimension x="-20" y="16"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						COE_Twist:TwistNow();
+					</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				this:RegisterForDrag( "LeftButton" );
+			</OnLoad>
+			<OnDragStart>
+				this:StartMoving();
+			</OnDragStart>
+			<OnDragStop>
+				this:StopMovingOrSizing();
+			</OnDragStop>
+			<OnShow>
+				COE_Twist:RefreshUI();
+			</OnShow>
+		</Scripts>
+	</Frame>
+</Ui>
